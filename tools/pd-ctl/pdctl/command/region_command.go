@@ -41,6 +41,7 @@ var (
 	regionsSizePrefix      = "pd/api/v1/regions/size"
 	regionsKeyPrefix       = "pd/api/v1/regions/key"
 	regionsSiblingPrefix   = "pd/api/v1/regions/sibling"
+	regionRangePrefix	   = "pd/api/v1/regions/range"
 	regionIDPrefix         = "pd/api/v1/region/id"
 	regionKeyPrefix        = "pd/api/v1/region/key"
 )
@@ -57,6 +58,7 @@ func NewRegionCommand() *cobra.Command {
 	r.AddCommand(NewRegionWithSiblingCommand())
 	r.AddCommand(NewRegionWithStoreCommand())
 	r.AddCommand(NewRegionsWithStartKeyCommand())
+	r.AddCommand(NewRegionWithRangeCommand())
 
 	topRead := &cobra.Command{
 		Use:   `topread <limit> [--jq="<query string>"]`,
@@ -384,6 +386,16 @@ func NewRegionsWithStartKeyCommand() *cobra.Command {
 	return r
 }
 
+func NewRegionWithRangeCommand() *cobra.Command {
+	r := &cobra.Command{
+		Use:   "range <startkey> <endkey>",
+		Short: "show regions of a range",
+		Run:   showRegionsFromRangeCommandFunc,
+	}
+	return r
+}
+
+
 func showRegionsFromStartKeyCommandFunc(cmd *cobra.Command, args []string) {
 	if len(args) < 1 || len(args) > 2 {
 		cmd.Println(cmd.UsageString())
@@ -403,6 +415,26 @@ func showRegionsFromStartKeyCommandFunc(cmd *cobra.Command, args []string) {
 		}
 		prefix += "&limit=" + args[1]
 	}
+	r, err := doRequest(cmd, prefix, http.MethodGet)
+	if err != nil {
+		cmd.Printf("Failed to get region: %s\n", err)
+		return
+	}
+	cmd.Println(r)
+}
+
+func showRegionsFromRangeCommandFunc(cmd *cobra.Command, args []string) {
+	if len(args) < 1 || len(args) > 2 {
+		cmd.Println(cmd.UsageString())
+		return
+	}
+
+	startKey := url.QueryEscape(args[0])
+	endKey := url.QueryEscape(args[1])
+
+	prefix := regionRangePrefix + "?startKey=" + startKey + "&endKey=" + endKey
+
+	cmd.Println(prefix)
 	r, err := doRequest(cmd, prefix, http.MethodGet)
 	if err != nil {
 		cmd.Printf("Failed to get region: %s\n", err)

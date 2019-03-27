@@ -26,6 +26,7 @@ import (
 	"github.com/pingcap/pd/server/namespace"
 	"github.com/pingcap/pd/server/schedule"
 	"go.uber.org/zap"
+	"bytes"
 )
 
 type clusterInfo struct {
@@ -281,6 +282,24 @@ func (c *clusterInfo) ScanRegions(startKey []byte, limit int) []*core.RegionInfo
 	c.RLock()
 	defer c.RUnlock()
 	return c.core.Regions.ScanRange(startKey, limit)
+}
+
+func (c *clusterInfo) ScanRegionsByRange(startKey, endKey []byte) []*core.RegionInfo {
+	c.RLock()
+	defer c.RUnlock()
+
+	res := make([]*core.RegionInfo, 0, 1024)
+	var regions = c.core.Regions
+	var count  = 0;
+	regions.ScanRangeWithIterator(startKey, func(region *metapb.Region) bool {
+		if bytes.Compare(region.StartKey, []byte(endKey)) < 0 && count < 1024 {
+			res = append(res, regions.GetRegion(region.GetId()))
+			count++
+			return true
+		}
+		return false
+	})
+	return res
 }
 
 // GetAdjacentRegions returns region's info that is adjacent with specific region

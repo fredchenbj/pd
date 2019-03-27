@@ -257,6 +257,12 @@ func (c *RaftCluster) ScanRegionsByKey(startKey []byte, limit int) []*core.Regio
 	return c.cachedCluster.ScanRegions(startKey, limit)
 }
 
+func (c *RaftCluster) ScanRegionsByRange(startKey, endKey []byte) []*core.RegionInfo {
+	c.RLock()
+	defer c.RUnlock()
+	return c.cachedCluster.ScanRegionsByRange(startKey, endKey)
+}
+
 // GetRegionByID gets region and leader peer by regionID from cluster.
 func (c *RaftCluster) GetRegionByID(regionID uint64) (*metapb.Region, *metapb.Peer) {
 	c.RLock()

@@ -24,6 +24,7 @@ import (
 	"github.com/pingcap/pd/server"
 	"github.com/pingcap/pd/server/core"
 	"github.com/unrolled/render"
+	log "github.com/pingcap/log"
 )
 
 // RegionInfo records detail region info for api usage.
@@ -69,6 +70,18 @@ type RegionsInfo struct {
 	Count   int           `json:"count"`
 	Regions []*RegionInfo `json:"regions"`
 }
+
+type RegionsDistriInfo struct {
+	Count  int          `json:"count"`
+	Stores []*StoreRegionInfo `json:"stores"`
+}
+
+type StoreRegionInfo struct {
+	StoreID uint64 `json:"storeID"`
+	RegionCount int `json:"regionCount"`
+	LeaderCount int `json:"leaderCount"`
+}
+
 
 type regionHandler struct {
 	svr *server.Server
@@ -135,6 +148,30 @@ func convertToAPIRegions(regions []*core.RegionInfo) *RegionsInfo {
 		Regions: regionInfos,
 	}
 }
+
+func convertToAPIRegionsDistriInfo(regions []*core.RegionInfo) *RegionsDistriInfo {
+	storeRegionInfo := make(map[uint64]*StoreRegionInfo)
+	for _, r := range regions {
+		storeRegionInfo[r.GetLeader().StoreId].LeaderCount ++
+		for _, p := range r.GetPeers() {
+			storeRegionInfo[p.StoreId].RegionCount ++
+		}
+	}
+
+	regionInfo := make([]*StoreRegionInfo, len(storeRegionInfo))
+	var j = 0
+	for i, s := range storeRegionInfo {
+		s.StoreID = i
+		regionInfo[j] = s
+		j++
+
+	}
+	return &RegionsDistriInfo{
+		Count:   len(regions),
+		Stores:	 regionInfo,
+	}
+}
+
 
 func (h *regionsHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	cluster := h.svr.GetRaftCluster()
@@ -270,6 +307,24 @@ func (h *regionsHandler) GetRegionSiblings(w http.ResponseWriter, r *http.Reques
 	h.rd.JSON(w, http.StatusOK, regionsInfo)
 }
 
+func (h *regionsHandler) GetRangeDistriInfo(w http.ResponseWriter, r *http.Request) {
+	cluster := h.svr.GetRaftCluster()
+	if cluster == nil {
+		h.rd.JSON(w, http.StatusInternalServerError, server.ErrNotBootstrapped.Error())
+		return
+	}
+
+	startKey := r.URL.Query().Get("startKey")
+	endKey := r.URL.Query().Get("endKey")
+
+	log.Info("Range: startKey: " + startKey + " endKey: " + endKey)
+
+	regions := cluster.ScanRegionsByRange([]byte(startKey), []byte(endKey))
+	regionsInfo := convertToAPIRegionsDistriInfo(regions)
+
+	h.rd.JSON(w, http.StatusOK, regionsInfo)
+}
+
 const (
 	defaultRegionLimit = 16
 	maxRegionLimit     = 10240
@@ -383,3 +438,6 @@ func TopNRegions(regions []*core.RegionInfo, less func(a, b *core.RegionInfo) bo
 	}
 	return res
 }
+
+
+
