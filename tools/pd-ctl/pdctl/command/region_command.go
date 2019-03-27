@@ -392,6 +392,7 @@ func NewRegionWithRangeCommand() *cobra.Command {
 		Short: "show regions of a range",
 		Run:   showRegionsFromRangeCommandFunc,
 	}
+	r.Flags().String("jq", "", "jq query")
 	return r
 }
 
@@ -440,7 +441,12 @@ func showRegionsFromRangeCommandFunc(cmd *cobra.Command, args []string) {
 		cmd.Printf("Failed to get region: %s\n", err)
 		return
 	}
-	cmd.Println(r)
+
+	if flag := cmd.Flag("jq"); flag != nil && flag.Value.String() != "" {
+		printWithJQFilter(r, flag.Value.String())
+	} else {
+		cmd.Println(r)
+	}
 }
 
 // NewRegionWithCheckCommand returns a region with check subcommand of regionCmd
