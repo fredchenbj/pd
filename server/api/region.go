@@ -24,7 +24,6 @@ import (
 	"github.com/pingcap/pd/server"
 	"github.com/pingcap/pd/server/core"
 	"github.com/unrolled/render"
-	log "github.com/pingcap/log"
 )
 
 // RegionInfo records detail region info for api usage.
@@ -152,19 +151,30 @@ func convertToAPIRegions(regions []*core.RegionInfo) *RegionsInfo {
 func convertToAPIRegionsDistriInfo(regions []*core.RegionInfo) *RegionsDistriInfo {
 	storeRegionInfo := make(map[uint64]*StoreRegionInfo)
 	for _, r := range regions {
-		storeRegionInfo[r.GetLeader().StoreId].LeaderCount ++
+		store_id := r.GetLeader().StoreId
+		_, ok := storeRegionInfo[store_id]
+		if !ok {
+			storeRegionInfo[store_id] = &StoreRegionInfo { StoreID:store_id, LeaderCount:1, RegionCount:0}
+		} else {
+			storeRegionInfo[store_id].LeaderCount ++
+		}
+
 		for _, p := range r.GetPeers() {
-			storeRegionInfo[p.StoreId].RegionCount ++
+			store_id := p.StoreId
+			_, ok := storeRegionInfo[store_id]
+			if !ok {
+				storeRegionInfo[store_id] = &StoreRegionInfo { StoreID:store_id, LeaderCount:0, RegionCount:1}
+			} else {
+				storeRegionInfo[store_id].RegionCount ++
+			}
 		}
 	}
 
 	regionInfo := make([]*StoreRegionInfo, len(storeRegionInfo))
 	var j = 0
-	for i, s := range storeRegionInfo {
-		s.StoreID = i
+	for _, s := range storeRegionInfo {
 		regionInfo[j] = s
 		j++
-
 	}
 	return &RegionsDistriInfo{
 		Count:   len(regions),
@@ -317,9 +327,8 @@ func (h *regionsHandler) GetRangeDistriInfo(w http.ResponseWriter, r *http.Reque
 	startKey := r.URL.Query().Get("startKey")
 	endKey := r.URL.Query().Get("endKey")
 
-	log.Info("Range: startKey: " + startKey + " endKey: " + endKey)
-
 	regions := cluster.ScanRegionsByRange([]byte(startKey), []byte(endKey))
+
 	regionsInfo := convertToAPIRegionsDistriInfo(regions)
 
 	h.rd.JSON(w, http.StatusOK, regionsInfo)

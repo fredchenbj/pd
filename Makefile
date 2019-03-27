@@ -38,13 +38,13 @@ ci: build check basic-test
 build: export GO111MODULE=on
 build:
 ifeq ("$(WITH_RACE)", "1")
-	CGO_ENABLED=1 go build -race -ldflags '$(LDFLAGS)' -o bin/pd-server cmd/pd-server/main.go
+	CGO_ENABLED=1 go build -mod=vendor -race -ldflags '$(LDFLAGS)' -o bin/pd-server cmd/pd-server/main.go
 else
-	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o bin/pd-server cmd/pd-server/main.go
+	CGO_ENABLED=0 go build -mod=vendor -ldflags '$(LDFLAGS)' -o bin/pd-server cmd/pd-server/main.go
 endif
-	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o bin/pd-ctl tools/pd-ctl/main.go
-	CGO_ENABLED=0 go build -o bin/pd-tso-bench tools/pd-tso-bench/main.go
-	CGO_ENABLED=0 go build -o bin/pd-recover tools/pd-recover/main.go
+	CGO_ENABLED=0 go build -mod=vendor -ldflags '$(LDFLAGS)' -o bin/pd-ctl tools/pd-ctl/main.go
+	CGO_ENABLED=0 go build -mod=vendor -o bin/pd-tso-bench tools/pd-tso-bench/main.go
+	CGO_ENABLED=0 go build -mod=vendor -o bin/pd-recover tools/pd-recover/main.go
 
 test: retool-setup
 	# testing..
