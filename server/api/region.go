@@ -151,7 +151,10 @@ func convertToAPIRegions(regions []*core.RegionInfo) *RegionsInfo {
 func convertToAPIRegionsDistriInfo(regions []*core.RegionInfo) *RegionsDistriInfo {
 	storeRegionInfo := make(map[uint64]*StoreRegionInfo)
 	for _, r := range regions {
-		store_id := r.GetLeader().StoreId
+		if r == nil {
+			continue
+		}
+		store_id := r.GetLeader().GetStoreId()
 		_, ok := storeRegionInfo[store_id]
 		if !ok {
 			storeRegionInfo[store_id] = &StoreRegionInfo { StoreID:store_id, LeaderCount:1, RegionCount:0}
@@ -160,10 +163,10 @@ func convertToAPIRegionsDistriInfo(regions []*core.RegionInfo) *RegionsDistriInf
 		}
 
 		for _, p := range r.GetPeers() {
-			store_id := p.StoreId
+			store_id := p.GetStoreId()
 			_, ok := storeRegionInfo[store_id]
 			if !ok {
-				storeRegionInfo[store_id] = &StoreRegionInfo { StoreID:store_id, LeaderCount:0, RegionCount:1}
+				storeRegionInfo[store_id] = &StoreRegionInfo{StoreID:store_id, LeaderCount:0, RegionCount:1}
 			} else {
 				storeRegionInfo[store_id].RegionCount ++
 			}
@@ -328,7 +331,6 @@ func (h *regionsHandler) GetRangeDistriInfo(w http.ResponseWriter, r *http.Reque
 	endKey := r.URL.Query().Get("endKey")
 
 	regions := cluster.ScanRegionsByRange([]byte(startKey), []byte(endKey))
-
 	regionsInfo := convertToAPIRegionsDistriInfo(regions)
 
 	h.rd.JSON(w, http.StatusOK, regionsInfo)
