@@ -17,7 +17,7 @@ WORKDIR /go/src/github.com/pingcap/pd
 COPY go.mod .
 COPY go.sum .
 
-RUN GO111MODULE=on go mod download
+#RUN GO111MODULE=on go mod download
 
 COPY . .
 
