@@ -72,6 +72,8 @@ type Client interface {
 	GetOperator(ctx context.Context, regionID uint64) (*pdpb.GetOperatorResponse, error)
 	// Close closes the client.
 	Close()
+	// Alloc ids
+	AllocID(ctx context.Context) (uint64, error)
 }
 
 // GetStoreOp represents available options when getting stores.
@@ -788,6 +790,16 @@ func (c *client) GetOperator(ctx context.Context, regionID uint64) (*pdpb.GetOpe
 		Header:   c.requestHeader(),
 		RegionId: regionID,
 	})
+}
+
+func (c *client) AllocID(ctx context.Context) (id uint64, err error) {
+	ctx, cancel := context.WithTimeout(ctx, pdTimeout)
+	defer cancel()
+	if res, err := c.leaderClient().AllocID(ctx, &pdpb.AllocIDRequest{Header:c.requestHeader()}); err == nil {
+		return res.Id, nil
+	} else {
+		return 0, err
+	}
 }
 
 func (c *client) requestHeader() *pdpb.RequestHeader {
