@@ -12,7 +12,7 @@ require (
 	github.com/dustin/go-humanize v0.0.0-20180421182945-02af3965c54e
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/gogo/protobuf v1.0.0
+	github.com/gogo/protobuf v1.2.1
 	github.com/golang/groupcache v0.0.0-20181024230925-c65c006176ff // indirect
 	github.com/golang/protobuf v1.2.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
