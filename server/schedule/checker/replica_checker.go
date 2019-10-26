@@ -67,6 +67,19 @@ func NewReplicaChecker(cluster opt.Cluster, classifier namespace.Classifier, n .
 	}
 }
 
+func (r *ReplicaChecker) checkRegionInRange(region *core.RegionInfo) bool {
+	regionStartKey := fmt.Sprintf("%X", region.GetStartKey())
+	regionEndKey := fmt.Sprintf("%X", region.GetEndKey())
+	rangeStart := r.cluster.AddReplicaRangeStart()
+	rangeEnd := r.cluster.AddReplicaRangeEnd()
+
+	if (regionStartKey >= rangeStart && regionStartKey < rangeEnd) || (regionEndKey > rangeStart && regionEndKey <= rangeEnd) {
+		return true
+	} else {
+		return false
+	}
+}
+
 // Check verifies a region's replicas, creating an operator.Operator if need.
 func (r *ReplicaChecker) Check(region *core.RegionInfo) *operator.Operator {
 	checkerCounter.WithLabelValues("replica_checker", "check").Inc()
@@ -80,9 +93,17 @@ func (r *ReplicaChecker) Check(region *core.RegionInfo) *operator.Operator {
 		op.SetPriorityLevel(core.HighPriority)
 		return op
 	}
-
-	if len(region.GetPeers()) < r.cluster.GetMaxReplicas() && r.cluster.IsMakeUpReplicaEnabled() {
-		log.Debug("region has fewer than max replicas", zap.Uint64("region-id", region.GetID()), zap.Int("peers", len(region.GetPeers())))
+	if r.cluster.IsAddExtraReplicaEnabled() && len(region.GetPeers()) < 6 && r.checkRegionInRange(region){
+		log.Info("region has fewer than six replicas", zap.Uint64("region-id", region.GetID()), zap.Int("peers", len(region.GetPeers())))
+		newPeer, _ := r.selectBestPeerToAddReplica(region, filter.NewStorageThresholdFilter(r.name))
+		if newPeer == nil {
+			checkerCounter.WithLabelValues("replica_checker", "no-target-store").Inc()
+			return nil
+		}
+		checkerCounter.WithLabelValues("replica_checker", "new-operator").Inc()
+		return operator.CreateAddPeerOperator("make-up-replica", region, newPeer.GetId(), newPeer.GetStoreId(), operator.OpReplica)
+	} else if len(region.GetPeers()) < r.cluster.GetMaxReplicas() && r.cluster.IsMakeUpReplicaEnabled() {
+		log.Info("region has fewer than max replicas", zap.Uint64("region-id", region.GetID()), zap.Int("peers", len(region.GetPeers())))
 		newPeer, _ := r.selectBestPeerToAddReplica(region, filter.NewStorageThresholdFilter(r.name))
 		if newPeer == nil {
 			checkerCounter.WithLabelValues("replica_checker", "no-target-store").Inc()
@@ -94,8 +115,8 @@ func (r *ReplicaChecker) Check(region *core.RegionInfo) *operator.Operator {
 
 	// when add learner peer, the number of peer will exceed max replicas for a while,
 	// just comparing the the number of voters to avoid too many cancel add operator log.
-	if len(region.GetVoters()) > r.cluster.GetMaxReplicas() && r.cluster.IsRemoveExtraReplicaEnabled() {
-		log.Debug("region has more than max replicas", zap.Uint64("region-id", region.GetID()), zap.Int("peers", len(region.GetPeers())))
+	if !r.cluster.IsAddExtraReplicaEnabled() && len(region.GetVoters()) > r.cluster.GetMaxReplicas() && r.cluster.IsRemoveExtraReplicaEnabled() {
+		log.Info("region has more than max replicas", zap.Uint64("region-id", region.GetID()), zap.Int("peers", len(region.GetPeers())))
 		oldPeer, _ := r.selectWorstPeer(region)
 		if oldPeer == nil {
 			checkerCounter.WithLabelValues("replica_checker", "no-worst-peer").Inc()

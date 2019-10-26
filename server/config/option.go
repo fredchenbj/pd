@@ -258,6 +258,20 @@ func (o *ScheduleOption) IsMakeUpReplicaEnabled() bool {
 }
 
 // IsRemoveExtraReplicaEnabled returns if remove extra replica is enabled.
+func (o *ScheduleOption) IsAddExtraReplicaEnabled() bool {
+	return o.Load().EnableAddExtraReplica
+}
+
+// IsRemoveExtraReplicaEnabled returns if remove extra replica is enabled.
+func (o *ScheduleOption) AddReplicaRangeStart() string {
+	return o.Load().AddReplicaRangeStart
+}
+
+func (o *ScheduleOption) AddReplicaRangeEnd() string {
+	return o.Load().AddReplicaRangeEnd
+}
+
+// IsRemoveExtraReplicaEnabled returns if remove extra replica is enabled.
 func (o *ScheduleOption) IsRemoveExtraReplicaEnabled() bool {
 	return !o.Load().DisableRemoveExtraReplica
 }

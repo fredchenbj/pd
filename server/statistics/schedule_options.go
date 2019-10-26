@@ -44,6 +44,9 @@ type ScheduleOptions interface {
 	GetLeaderScheduleStrategy() core.ScheduleStrategy
 
 	IsMakeUpReplicaEnabled() bool
+	IsAddExtraReplicaEnabled() bool
+	AddReplicaRangeStart() string
+	AddReplicaRangeEnd() string
 	IsRemoveExtraReplicaEnabled() bool
 	IsRemoveDownReplicaEnabled() bool
 	IsReplaceOfflineReplicaEnabled() bool

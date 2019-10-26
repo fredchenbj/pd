@@ -54,6 +54,9 @@ type Options interface {
 	IsRemoveDownReplicaEnabled() bool
 	IsReplaceOfflineReplicaEnabled() bool
 	IsMakeUpReplicaEnabled() bool
+	IsAddExtraReplicaEnabled() bool
+	AddReplicaRangeStart() string
+	AddReplicaRangeEnd() string
 	IsRemoveExtraReplicaEnabled() bool
 	IsLocationReplacementEnabled() bool
 	IsNamespaceRelocationEnabled() bool

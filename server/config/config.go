@@ -542,6 +542,9 @@ type ScheduleConfig struct {
 	DisableMakeUpReplica bool `toml:"disable-make-up-replica" json:"disable-make-up-replica,string"`
 	// DisableRemoveExtraReplica is the option to prevent replica checker from
 	// removing extra replicas.
+	EnableAddExtraReplica bool `toml:"enable-add-extra-replica" json:"enable-add-extra-replica,string"`
+	AddReplicaRangeStart string `toml:"add-replica-range-start" json:"add-replica-range-start,string"`
+	AddReplicaRangeEnd string `toml:"add-replica-range-end" json:"add-replica-range-end,string"`
 	DisableRemoveExtraReplica bool `toml:"disable-remove-extra-replica" json:"disable-remove-extra-replica,string"`
 	// DisableLocationReplacement is the option to prevent replica checker from
 	// moving replica to a better location.
@@ -587,6 +590,9 @@ func (c *ScheduleConfig) Clone() *ScheduleConfig {
 		DisableReplaceOfflineReplica: c.DisableReplaceOfflineReplica,
 		DisableMakeUpReplica:         c.DisableMakeUpReplica,
 		DisableRemoveExtraReplica:    c.DisableRemoveExtraReplica,
+		EnableAddExtraReplica:    	  c.EnableAddExtraReplica,
+		AddReplicaRangeStart: 		  c.AddReplicaRangeStart,
+		AddReplicaRangeEnd:			  c.AddReplicaRangeEnd,
 		DisableLocationReplacement:   c.DisableLocationReplacement,
 		DisableNamespaceRelocation:   c.DisableNamespaceRelocation,
 		Schedulers:                   schedulers,

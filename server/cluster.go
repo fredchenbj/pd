@@ -1331,6 +1331,18 @@ func (c *RaftCluster) IsMakeUpReplicaEnabled() bool {
 	return c.opt.IsMakeUpReplicaEnabled()
 }
 
+func (c *RaftCluster) IsAddExtraReplicaEnabled() bool {
+	return c.opt.IsAddExtraReplicaEnabled()
+}
+
+func (c *RaftCluster) AddReplicaRangeStart() string {
+	return c.opt.AddReplicaRangeStart()
+}
+
+func (c *RaftCluster) AddReplicaRangeEnd() string {
+	return c.opt.AddReplicaRangeEnd()
+}
+
 // IsRemoveExtraReplicaEnabled returns if remove extra replica is enabled.
 func (c *RaftCluster) IsRemoveExtraReplicaEnabled() bool {
 	return c.opt.IsRemoveExtraReplicaEnabled()
